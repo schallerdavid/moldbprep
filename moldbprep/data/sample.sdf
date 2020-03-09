@@ -8,6 +8,12 @@ CCO
   1  2  1  0  0  0  0
   2  3  1  0  0  0  0
 M  END
+>  <ID>
+S01
+
+>  <vendor>
+sample
+
 $$$$
 N1C=CC=C1
   MOE2019           2D
@@ -24,6 +30,12 @@ N1C=CC=C1
   3  4  1  0  0  0  0
   4  5  2  0  0  0  0
 M  END
+>  <ID>
+S01
+
+>  <vendor>
+sample
+
 $$$$
 FC(F)(F)C(Cl)(Cl)Cl
   MOE2019           2D
@@ -45,4 +57,10 @@ FC(F)(F)C(Cl)(Cl)Cl
   5  7  1  0  0  0  0
   5  8  1  0  0  0  0
 M  END
+>  <ID>
+S01
+
+>  <vendor>
+sample
+
 $$$$
