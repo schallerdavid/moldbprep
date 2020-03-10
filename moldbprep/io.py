@@ -43,6 +43,8 @@ def sdf_properties(file_path):
         for line in sdf_file:
             if '>  <' in line:
                 properties.append(line.strip()[4:-1])
+            elif '> <' in line:
+                properties.append(line.strip()[3:-1])
             elif '$$$$' in line:
                 break
     return properties
