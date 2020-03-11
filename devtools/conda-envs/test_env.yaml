@@ -2,7 +2,7 @@ name: test
 channels:
 dependencies:
     # Base depends
-  - python >= 3.5
+  - python >= 3.6
   - pip
   - molvs >= 0.1.1
 
