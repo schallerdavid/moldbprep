@@ -1,8 +1,9 @@
-from molvs.charge import Reionizer, Uncharger
+from molvs.charge import Uncharger
 from molvs.fragment import LargestFragmentChooser
 from molvs import Standardizer
 from rdkit import Chem
-from rdkit.Chem.AllChem import ReplaceSubstructs, ReactionFromSmarts
+from rdkit.Chem.AllChem import ReactionFromSmarts
+import time
 
 
 def standardize_mol(mol):
@@ -45,7 +46,7 @@ def standardize_mol(mol):
     return smiles
 
 
-def standardize_mols(file_path, first_mol, last_mol, mol_counter=None):
+def standardize_mols(process_id, jobs, mol_counter, num_mols, results):
     """
     This function passes molecules to the standardize_mol function.
 
@@ -61,11 +62,22 @@ def standardize_mols(file_path, first_mol, last_mol, mol_counter=None):
         Position of the last molecule in sdf-file to standardize.
 
     """
-    suppl = Chem.SDMolSupplier(file_path)
-    for mol_id in range(first_mol, last_mol):
+    #suppl = Chem.SDMolSupplier(file_path)
+    #for mol_id in range(first_mol, last_mol):
 
-        mol_standardized = standardize_mol(suppl[mol_id])
-        if mol_counter is not None:
+    #    mol_standardized = standardize_mol(suppl[mol_id])
+    #    if mol_counter is not None:
+    #        with mol_counter.get_lock():
+    #            mol_counter.value += 1
+    job = jobs.pop(0)
+    while job is not None:
+        for x in range(job['mol_start'], job['mol_end'] + 1):
             with mol_counter.get_lock():
                 mol_counter.value += 1
+            results.append('bla')
+        print(process_id, job)
+        try:
+            job = jobs.pop(0)
+        except IndexError:
+            job = None
     return
