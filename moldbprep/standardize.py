@@ -26,7 +26,7 @@ def largest_fragment(mol):
     return mol
 
 
-def prononate_mol(mol):
+def protonate_mol(mol):
     """
 
     Parameters
@@ -97,7 +97,7 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
                 identifier = mol.GetProp(job['identifier_field'])
                 mol = Standardizer().standardize(mol)
                 mol = largest_fragment(mol)
-                mol = prononate_mol(mol)
+                mol = protonate_mol(mol)
                 with mol_counter.get_lock():
                     mol_counter.value += 1
                     update_progress(mol_counter.value / num_mols, 'Progress of standardization',

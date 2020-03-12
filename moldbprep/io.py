@@ -101,7 +101,7 @@ def time_to_text(seconds):
         if seconds > 3600:
             if seconds > 86400:
                 if seconds > 1209600:
-                    if seconds > 31449600:
+                    if seconds > 62899252:
                         time_as_text = 'years'
                     else:
                         time_as_text = '{} weeks'.format(round(seconds / 1209600, 1))
