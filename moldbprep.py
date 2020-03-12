@@ -64,5 +64,6 @@ if __name__ == "__main__":
         process.start()
     for process in processes:
         process.join()
-    print(mol_counter.value, num_mols)
+    for x in results:
+        print(x)
     print('Finished after {} s.'.format(time.time() - start_time))

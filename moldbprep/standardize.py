@@ -7,7 +7,7 @@ from rdkit.Chem.AllChem import ReactionFromSmarts
 import time
 
 
-def standardize_mol(mol):
+def largest_fragment(mol):
     """
     This function standardizes molecules.
 
@@ -22,6 +22,24 @@ def standardize_mol(mol):
         A list containing SMILES, vendor and vendor ID.
 
     """
+    mol = Chem.MolFromSmiles(Chem.MolToSmiles(LargestFragmentChooser().choose(mol)))
+    return mol
+
+
+def prononate_mol(mol):
+    """
+
+    Parameters
+    ----------
+        mol : rdkit.Chem.rdchem.Mol
+        An RDKit molecule.
+
+    Returns
+    -------
+        mol : rdkit.Chem.rdchem.Mol
+        A protonated RDKit molecule.
+
+    """
     transformations = {
         'acids C=C-OH': '[H][O;$(OC=CC(=O))!$([-1])!$(OC[-1]):1][C:2]>>[C:2][O-;$(OC=CC(=O)):1]',
         'acids NH': '[H][NH1;$(N(C=O)S(=O)(=O)[#6])!$([-1])!$(N*[-1]):1]([C:3])[S:2]>>[C:3][N-;$(N(C(=O))S(=O)(=O)):1][S:2]',
@@ -31,9 +49,7 @@ def standardize_mol(mol):
         'guanidines': '[N:4][C:2]([N:3])=[N;!$([+1])!$(NC[+1])!$(N=CN=*)!$(N(C(=O))=CNC(=O))!$(N=C(NC=O)NC=O)!$(N=CNN(~O)~O)!$(NC(=O)[CX3]):1][#1,#6:5]>>[H][N+:1]([#1,#6:5])=[C:2]([N:4])[N:3]',
         'tetrazoles': '[#7,#6:2][#7;r5;$(*@n@n)!$(*[#6][#6])!$([#7][-1])!$([#7][#6]=O)!$([#7]*[#6](=O)):1]([#7,#6:3])[H]>>[#7,#6:2][*-:1][#7,#6:3]'
     }
-    mol = Chem.MolFromSmiles(Chem.MolToSmiles(LargestFragmentChooser().choose(mol)))
     mol = Uncharger().uncharge(mol)
-    mol = Standardizer().standardize(mol)
     mol = Chem.AddHs(mol)
     for smarts in transformations.values():
         products = [0]
@@ -44,8 +60,7 @@ def standardize_mol(mol):
                 mol = Chem.MolFromSmiles(Chem.MolToSmiles(products[0][0]))
                 mol = Chem.AddHs(mol)
     mol = Chem.RemoveHs(mol)
-    smiles = Chem.MolToSmiles(mol)
-    return smiles
+    return mol
 
 
 def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
@@ -64,23 +79,32 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
         Position of the last molecule in sdf-file to standardize.
 
     """
-    #suppl = Chem.SDMolSupplier(file_path)
+    #
     #for mol_id in range(first_mol, last_mol):
 
     #    mol_standardized = standardize_mol(suppl[mol_id])
     #    if mol_counter is not None:
     #        with mol_counter.get_lock():
     #            mol_counter.value += 1
-    job = jobs.pop(0)
+    job = 'initiate'
+    processed_mols = []
     while job is not None:
-        for x in range(job['mol_start'], job['mol_end'] + 1):
-            with mol_counter.get_lock():
-                mol_counter.value += 1
-                update_progress(mol_counter.value / num_mols, 'Progress of standardization',
-                                ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
-            results.append('bla')
         try:
             job = jobs.pop(0)
+            supplier = Chem.SDMolSupplier(job['sdf_path'])
+            for mol_id in range(job['mol_start'], job['mol_end'] + 1):
+                mol = supplier[mol_id]
+                identifier = mol.GetProp(job['identifier_field'])
+                mol = Standardizer().standardize(mol)
+                mol = largest_fragment(mol)
+                mol = prononate_mol(mol)
+                with mol_counter.get_lock():
+                    mol_counter.value += 1
+                    update_progress(mol_counter.value / num_mols, 'Progress of standardization',
+                                    ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
+                processed_mols.append([Chem.MolToSmiles(mol), Chem.MolToInchiKey(mol), job['vendor'],
+                                       identifier])
         except IndexError:
             job = None
+    results += processed_mols
     return
