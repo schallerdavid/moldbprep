@@ -4,7 +4,6 @@ Prepare, standardize and merge molecule databases for virtual screening.
 """
 
 # Add imports here
-from .moldbprep import *
 from .io import *
 from .standardize import *
 

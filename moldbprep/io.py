@@ -48,3 +48,34 @@ def sdf_properties(file_path):
             elif '$$$$' in line:
                 break
     return properties
+
+
+def database_prompt(file_path):
+    """
+    This function prompts the user to enter the vendor name and to identify the sdf field storing the molecule
+    identifier in an sdf file.
+
+    Parameters
+    ----------
+    file_path : str
+         Full path to sdf file.
+
+    Returns
+    -------
+    vendor : str
+        Name of vendor.
+
+    identifier_field : str
+        Name of sdf field storing the molecule identifier.
+
+    """
+    vendor = ''
+    id_column = 0
+    properties = ['None'] + sdf_properties(file_path)
+    while len(vendor) < 1:
+        vendor = input('Provide a vendor name for sdf file located at {}.\n>>> '.format(file_path))
+    while id_column not in range(1, len(properties) + 1):
+        id_column = int(input('Enter the number for the sdf field storing the molecule identifier.\n' + '\n'.join(
+            '{} - '.format(counter + 1) + property for counter, property in enumerate(properties)) + '\n>>> '))
+    identifier_field = properties[int(id_column) - 1]
+    return vendor, identifier_field
