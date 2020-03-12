@@ -88,7 +88,7 @@ def time_to_text(seconds):
 
     Parameters
     ----------
-    seconds : int
+    seconds : float
         Time in seconds.
 
     Returns
