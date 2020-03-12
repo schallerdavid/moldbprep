@@ -8,6 +8,7 @@ import argparse
 from moldbprep.io import count_sdf_mols, database_prompt
 from moldbprep.standardize import standardize_mols
 import multiprocessing
+import pandas as pd
 import time
 
 logo = '\n'.join(["                               _     _ _              v. alpha    ",
@@ -46,9 +47,8 @@ if __name__ == "__main__":
     num_processes = int(parser.parse_args().num_processes)
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
-    print('Input sdf files:\n ' + '\n '.join(['{} with {} molecules from vendor {} and {} as identifier field.'.format(
-        key, *value) for key, value in sdf_file_dict.items()]))
-    print('Output sdf file:\n {}'.format(output_path))
+    vendors = [value[1] for value in sdf_file_dict.values()]
+    num_mols = sum([value[0] for value in sdf_file_dict.values()])
     start_time = time.time()
     manager = multiprocessing.Manager()
     results = manager.list()
@@ -56,14 +56,12 @@ if __name__ == "__main__":
     for job in generate_processes(sdf_file_dict, 500):
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
-    num_mols = sum([value[0] for value in sdf_file_dict.values()])
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
-                                                                        start_time)) for process_id in
+                                                                        start_time, vendors)) for process_id in
                  range(num_processes)]
     for process in processes:
         process.start()
     for process in processes:
         process.join()
-    for x in results:
-        print(x)
+    results = pd.DataFrame(list(results), columns=['smiles', 'inchikey'] + vendors)
     print('Finished after {} s.'.format(time.time() - start_time))

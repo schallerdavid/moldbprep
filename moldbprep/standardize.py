@@ -64,7 +64,7 @@ def protonate_mol(mol):
     return mol
 
 
-def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
+def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors):
     """
     This function passes molecules to the standardization functions.
 
@@ -91,6 +91,7 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
     while job is not None:
         try:
             job = jobs.pop(0)
+            vendor_position = vendors.index(job['vendor'])
             supplier = Chem.SDMolSupplier(job['sdf_path'])
             for mol_id in range(job['mol_start'], job['mol_end'] + 1):
                 mol = supplier[mol_id]
@@ -98,12 +99,13 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
                 mol = Standardizer().standardize(mol)
                 mol = largest_fragment(mol)
                 mol = protonate_mol(mol)
+                mol_as_list = [Chem.MolToSmiles(mol), Chem.MolToInchiKey(mol)] + [''] * len(vendors)
+                mol_as_list[2 + vendor_position] = identifier
+                processed_mols.append(mol_as_list)
                 with mol_counter.get_lock():
                     mol_counter.value += 1
-                    update_progress(mol_counter.value / num_mols, 'Progress of standardization',
-                                    ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
-                processed_mols.append([Chem.MolToSmiles(mol), Chem.MolToInchiKey(mol), job['vendor'],
-                                       identifier])
+                update_progress(mol_counter.value / num_mols, 'Progress of standardization',
+                                ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
         except IndexError:
             job = None
     results += processed_mols
