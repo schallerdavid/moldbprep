@@ -57,8 +57,8 @@ if __name__ == "__main__":
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
     num_mols = sum([value[0] for value in sdf_file_dict.values()])
-    processes = [multiprocessing.Process(target=standardize_mols, args=(process_id, jobs, mol_counter, num_mols,
-                                                                        results)) for process_id in
+    processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
+                                                                        start_time)) for process_id in
                  range(num_processes)]
     for process in processes:
         process.start()

@@ -1,3 +1,4 @@
+from moldbprep.io import update_progress
 from molvs.charge import Uncharger
 from molvs.fragment import LargestFragmentChooser
 from molvs import Standardizer
@@ -9,6 +10,7 @@ import time
 def standardize_mol(mol):
     """
     This function standardizes molecules.
+
     Parameters
     ----------
     mol - rdkit.Chem.rdchem.Mol
@@ -46,7 +48,7 @@ def standardize_mol(mol):
     return smiles
 
 
-def standardize_mols(process_id, jobs, mol_counter, num_mols, results):
+def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
     """
     This function passes molecules to the standardize_mol function.
 
@@ -74,8 +76,9 @@ def standardize_mols(process_id, jobs, mol_counter, num_mols, results):
         for x in range(job['mol_start'], job['mol_end'] + 1):
             with mol_counter.get_lock():
                 mol_counter.value += 1
+                update_progress(mol_counter.value / num_mols, 'Progress of standardization',
+                                ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
             results.append('bla')
-        print(process_id, job)
         try:
             job = jobs.pop(0)
         except IndexError:

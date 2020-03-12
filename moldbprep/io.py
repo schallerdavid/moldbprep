@@ -1,3 +1,4 @@
+import sys
 
 
 def count_sdf_mols(file_path):
@@ -79,3 +80,66 @@ def database_prompt(file_path):
             '{} - '.format(counter + 1) + property for counter, property in enumerate(properties)) + '\n>>> '))
     identifier_field = properties[int(id_column) - 1]
     return vendor, identifier_field
+
+
+def time_to_text(seconds):
+    """
+    This function converts a time in seconds into a reasonable format.
+
+    Parameters
+    ----------
+    seconds : int
+        Time in seconds.
+
+    Returns
+    -------
+    time_as_text: str
+        Time in s, min, h, d, weeks or years depending on input.
+
+    """
+    if seconds > 60:
+        if seconds > 3600:
+            if seconds > 86400:
+                if seconds > 1209600:
+                    if seconds > 31449600:
+                        time_as_text = 'years'
+                    else:
+                        time_as_text = '{} weeks'.format(round(seconds / 1209600, 1))
+                else:
+                    time_as_text = '{} d'.format(round(seconds / 86400, 1))
+            else:
+                time_as_text = '{} h'.format(round(seconds / 3600, 1))
+        else:
+            time_as_text = '{} min'.format(round(seconds / 60, 1))
+    else:
+        time_as_text = '{} s'.format(int(seconds))
+    return time_as_text
+
+
+def update_progress(progress, progress_info, eta):
+    """
+    This function writes a progress bar to the terminal.
+
+    Parameters
+    ----------
+    progress: float
+        Progress of process described by number between 0 and 1.
+
+    progress_info: str
+        Info text that should be placed before the progress bar.
+
+    eta: float
+        Estimated time needed for finishing the process.
+
+    """
+    bar_length = 10
+    block = int(bar_length * progress)
+    if progress == 1.0:
+        status = '         Done\n'
+    else:
+        status = '  ETA {:8}'.format(time_to_text(eta))
+    text = '\r{}: [{}] {:>5.1f}%{}'.format(progress_info, '=' * block + ' ' * (bar_length - block), progress * 100,
+                                           status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
+    return
