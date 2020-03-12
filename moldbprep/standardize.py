@@ -9,17 +9,17 @@ import time
 
 def largest_fragment(mol):
     """
-    This function standardizes molecules.
+    This function picks the biggest fragment.
 
     Parameters
     ----------
-    mol - rdkit.Chem.rdchem.Mol
-        An RDKit molecule
+    mol : rdkit.Chem.rdchem.Mol
+        An RDKit molecule.
 
     Returns
     -------
-    smiles - str
-        A list containing SMILES, vendor and vendor ID.
+    mol : rdkit.Chem.rdchem.Mol
+        An RDKit molecule without small fragments.
 
     """
     mol = Chem.MolFromSmiles(Chem.MolToSmiles(LargestFragmentChooser().choose(mol)))
@@ -28,15 +28,16 @@ def largest_fragment(mol):
 
 def protonate_mol(mol):
     """
+    This function protonates molecules based on substructure patterns.
 
     Parameters
     ----------
-        mol : rdkit.Chem.rdchem.Mol
+    mol : rdkit.Chem.rdchem.Mol
         An RDKit molecule.
 
     Returns
     -------
-        mol : rdkit.Chem.rdchem.Mol
+    mol : rdkit.Chem.rdchem.Mol
         A protonated RDKit molecule.
 
     """
@@ -65,27 +66,26 @@ def protonate_mol(mol):
 
 def standardize_mols(jobs, mol_counter, num_mols, results, start_time):
     """
-    This function passes molecules to the standardize_mol function.
+    This function passes molecules to the standardization functions.
 
     Parameters
     ----------
-    file_path : str
-        Full path to sdf file.
+    jobs: multiprocessing.manager.list
+        A list containing job information as dictionaries.
 
-    first_mol : int
-        Position of the first molecule in sdf-file to standardize.
+    mol_counter: multiprocessing.manager.value
+        A counter keeping track of processed molecules.
 
-    last_mol : int
-        Position of the last molecule in sdf-file to standardize.
+    num_mols: int
+        Total number of molecules to be processed.
+
+    results: multiprocessing.manager.list
+        A list containing lists describing the processed molecules.
+
+    start_time: float
+        Starting time of molecule processing.
 
     """
-    #
-    #for mol_id in range(first_mol, last_mol):
-
-    #    mol_standardized = standardize_mol(suppl[mol_id])
-    #    if mol_counter is not None:
-    #        with mol_counter.get_lock():
-    #            mol_counter.value += 1
     job = 'initiate'
     processed_mols = []
     while job is not None:
