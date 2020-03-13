@@ -4,11 +4,11 @@ import os
 
 
 def test_count_sdf_mols():
-    assert count_sdf_mols(os.path.join(os.getcwd(), "moldbprep", "data", "sample.sdf")) == 3
+    assert count_sdf_mols(os.path.join(os.getcwd(), "moldbprep", "data", "db1.sdf")) == 3
 
 
 def test_sdf_properties():
-    assert sdf_properties(os.path.join(os.getcwd(), "moldbprep", "data", "sample.sdf")) == ['ID', 'vendor']
+    assert sdf_properties(os.path.join(os.getcwd(), "moldbprep", "data", "db1.sdf")) == ['ID', 'vendor']
 
 
 @pytest.mark.parametrize("time, text", [
