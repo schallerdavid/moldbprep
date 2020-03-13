@@ -1,4 +1,5 @@
-from moldbprep.standardize import largest_fragment, protonate_mol
+from moldbprep.standardize import largest_fragment, protonate_mol, merge_ids
+import pandas as pd
 import pytest
 from rdkit import Chem
 
@@ -26,3 +27,14 @@ def test_largest_fragment(input_smiles, output_smiles):
 def test_protonate_mol(input_smiles, output_smiles):
     assert Chem.MolToSmiles(protonate_mol(Chem.MolFromSmiles(input_smiles))) == \
            Chem.MolToSmiles(Chem.MolFromSmiles(output_smiles))
+
+
+def test_merge_ids():
+    assert merge_ids(pd.DataFrame([['C', '1', ''],
+                                   ['C', '2', ''],
+                                   ['A', '3', ''],
+                                   ['C', '', '1'],
+                                   ['B', '', '2']], columns=['smiles', 'DB1', 'DB2']), ['DB1', 'DB2']).equals(
+           pd.DataFrame([['A', '3', ''],
+                         ['B', '', '2'],
+                         ['C', '1,2', '1']], columns=['smiles', 'DB1', 'DB2']))
