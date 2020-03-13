@@ -2,6 +2,7 @@ from moldbprep.io import update_progress
 from molvs.charge import Uncharger
 from molvs.fragment import LargestFragmentChooser
 from molvs import Standardizer
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.AllChem import ReactionFromSmarts
 import time
@@ -99,8 +100,8 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors):
                 mol = Standardizer().standardize(mol)
                 mol = largest_fragment(mol)
                 mol = protonate_mol(mol)
-                mol_as_list = [Chem.MolToSmiles(mol), Chem.MolToInchiKey(mol)] + [''] * len(vendors)
-                mol_as_list[2 + vendor_position] = identifier
+                mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
+                mol_as_list[1 + vendor_position] = identifier
                 processed_mols.append(mol_as_list)
                 with mol_counter.get_lock():
                     mol_counter.value += 1
@@ -110,3 +111,41 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors):
             job = None
     results += processed_mols
     return
+
+
+def merge_ids(results, vendors):
+    """
+    This function merges identifiers from vendors for the same molecule.
+
+    Parameters
+    ----------
+    results: pandas.DataFrame
+        A dataframe with columns smiles, vendor1, ..., vendorx.
+
+    vendors: list
+        A list containing vendor names matching the ones in results.
+
+    Returns
+    -------
+    merged_results: pandas.DataFrame
+        A dataframe with columns smiles, vendor1, ..., vendorx. Duplicates of smiles are removed by merging vendor
+        identifiers with a comma.
+
+    """
+    grouped_per_vendor = []
+    for vendor in vendors:
+        vendor_results = results[results[vendor] != '']
+        joined_ids = vendor_results.groupby(['smiles'])[vendor].apply(','.join).to_frame().reset_index()
+        other_vendors = pd.DataFrame([[''] * (len(vendors) - 1)] * joined_ids.shape[0], columns=[x for x in vendors
+                                                                                                 if x != vendor])
+        grouped_per_vendor.append(pd.concat([joined_ids, other_vendors], axis=1))
+    grouped_per_vendor = pd.concat(grouped_per_vendor).reset_index(drop=True)
+    grouped = []
+    for vendor in vendors:
+        if len(grouped) == 0:
+            grouped.append(grouped_per_vendor.groupby(['smiles'])[vendor].apply(','.join).str.strip(',').reset_index())
+        else:
+            grouped.append(grouped_per_vendor.groupby(['smiles'])[vendor].apply(','.join
+                                                                                ).str.strip(',').reset_index(drop=True))
+    merged_results = pd.concat(grouped, axis=1)
+    return merged_results

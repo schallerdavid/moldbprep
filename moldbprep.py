@@ -6,7 +6,7 @@ Handles the primary functions
 """
 import argparse
 from moldbprep.io import count_sdf_mols, database_prompt
-from moldbprep.standardize import standardize_mols
+from moldbprep.standardize import standardize_mols, merge_ids
 import multiprocessing
 import pandas as pd
 import time
@@ -63,5 +63,7 @@ if __name__ == "__main__":
         process.start()
     for process in processes:
         process.join()
-    results = pd.DataFrame(list(results), columns=['smiles', 'inchikey'] + vendors)
+    results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
+    merged_results = merge_ids(results, vendors)
+    print(merged_results)
     print('Finished after {} s.'.format(time.time() - start_time))
