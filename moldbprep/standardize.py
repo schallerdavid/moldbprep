@@ -149,3 +149,5 @@ def merge_ids(results, vendors):
                                                                                 ).str.strip(',').reset_index(drop=True))
     merged_results = pd.concat(grouped, axis=1)
     return merged_results
+
+

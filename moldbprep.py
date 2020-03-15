@@ -5,7 +5,7 @@ Prepare, standardize and merge molecule databases for virtual screening.
 Handles the primary functions
 """
 import argparse
-from moldbprep.io import count_sdf_mols, database_prompt
+from moldbprep.io import count_sdf_mols, database_prompt, write_sdf
 from moldbprep.standardize import standardize_mols, merge_ids
 import multiprocessing
 import pandas as pd
@@ -21,7 +21,7 @@ logo = '\n'.join(["                               _     _ _              v. alph
                   "                             for virtual screening.               "])
 
 
-def generate_processes(sdf_file_dict, mols_per_job):
+def standardize_processes(sdf_file_dict, mols_per_job):
     jobs = []
     for sdf_path, value in sdf_file_dict.items():
         num_mols = value[0]
@@ -40,11 +40,13 @@ def generate_processes(sdf_file_dict, mols_per_job):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='moldbprep', description=logo, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-i', dest='input_paths', help='paths to input sdf files seperated by comma', required=True)
-    parser.add_argument('-o', dest='output_path', help='path to output sdf file', required=True)
+    parser.add_argument('-o', dest='output_path', help='path to output folder', default='.')
     parser.add_argument('-p', dest='num_processes', help='number of parallel processes', default=1)
+    parser.add_argument('-m', dest='mols_per_file', help='number of molecules per file', default=1000000)
     input_paths = parser.parse_args().input_paths.split(',')
     output_path = parser.parse_args().output_path
     num_processes = int(parser.parse_args().num_processes)
+    mols_per_file = int(parser.parse_args().mols_per_file)
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
     vendors = [value[1] for value in sdf_file_dict.values()]
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     manager = multiprocessing.Manager()
     results = manager.list()
     jobs = manager.list()
-    for job in generate_processes(sdf_file_dict, 500):
+    for job in standardize_processes(sdf_file_dict, 500):
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
@@ -63,7 +65,9 @@ if __name__ == "__main__":
         process.start()
     for process in processes:
         process.join()
+    print('Processing results...')
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     merged_results = merge_ids(results, vendors)
-    print(merged_results)
+    print('Writing results...')
+    write_sdf(merged_results, mols_per_file, output_path, vendors)
     print('Finished after {} s.'.format(time.time() - start_time))
