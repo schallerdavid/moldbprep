@@ -151,11 +151,31 @@ def update_progress(progress, progress_info, eta):
 
 
 def sdf_text(mol, mol_name, properties):
+    """
+    This function converts an RDKit molecule into an sdf representation as text.
+
+    Parameters
+    ----------
+    mol : rdkit.Chem.rdchem.Mol
+        An RDKit molecule.
+
+    mol_name: str
+        Name of the molecule.
+
+    properties: dict
+        Dictionary of sdf properties with property name as key and property value as value.
+
+    Returns
+    -------
+    sdf_text: str
+        Molecule as text in sdf format.
+
+    """
     mol.SetProp('_Name', mol_name)
-    text = Chem.MolToMolBlock(mol)
-    text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
-    text += '\n$$$$\n'
-    return text
+    sdf_text = Chem.MolToMolBlock(mol)
+    sdf_text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
+    sdf_text += '\n$$$$\n'
+    return sdf_text
 
 
 def write_sdf(merged_results, mols_per_file, output_path):
