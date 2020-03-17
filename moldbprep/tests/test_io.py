@@ -1,6 +1,7 @@
-from moldbprep.io import count_sdf_mols, sdf_properties, time_to_text
+from moldbprep.io import count_sdf_mols, sdf_properties, time_to_text, sdf_text
 import pytest
 import os
+from rdkit import Chem
 
 
 def test_count_sdf_mols():
@@ -21,3 +22,24 @@ def test_sdf_properties():
 ])
 def test_time_to_text(time, text):
     assert time_to_text(time) == text
+
+
+def test_sdf_text():
+    assert sdf_text(Chem.MolFromSmiles('CCC'), '1', {'db1': '1', 'db2': ''}) == \
+           '1\n' \
+           '     RDKit          2D\n' \
+           '\n' \
+           '  3  2  0  0  0  0  0  0  0  0999 V2000\n' \
+           '    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n' \
+           '    1.2990    0.7500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n' \
+           '    2.5981   -0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n' \
+           '  1  2  1  0\n' \
+           '  2  3  1  0\n' \
+           'M  END\n' \
+           '>  <db1>\n' \
+           '1\n' \
+           '\n' \
+           '>  <db2>\n' \
+           '\n' \
+           '\n' \
+           '$$$$\n'
