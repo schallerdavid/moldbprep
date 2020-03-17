@@ -150,7 +150,15 @@ def update_progress(progress, progress_info, eta):
     return
 
 
-def write_sdf(merged_results, mols_per_file, output_path, vendors):
+def sdf_text(mol, mol_name, properties):
+    mol.SetProp('_Name', mol_name)
+    text = Chem.MolToMolBlock(mol)
+    text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
+    text += '\n$$$$\n'
+    return text
+
+
+def write_sdf(merged_results, mols_per_file, output_path):
     """
     This function writes molecules to sd-files with vendor IDs as properties.
 
@@ -165,21 +173,22 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors):
     output_path: str
         Directory for writing sd-files.
 
-    vendors: list
-        List of vendors matching the columns in merged_results.
-
     """
     if os.path.isdir(output_path):
         shutil.rmtree(output_path)
     os.mkdir(output_path)
     mol_counter = 0
     num_mols = merged_results.shape[0]
-    fragment = Chem.SDWriter(os.path.join(output_path, 'fragment.sdf'))
+    fragment = open(os.path.join(output_path, 'fragment.sdf'), 'w')
     fragment_counter = 0
-    drug_like = Chem.SDWriter(os.path.join(output_path, 'drug-like.sdf'))
+    fragment_collector = []
+    drug_like = open(os.path.join(output_path, 'drug-like.sdf'), 'w')
     drug_like_counter = 0
-    big = Chem.SDWriter(os.path.join(output_path, 'big.sdf'))
+    drug_like_collector = []
+    big = open(os.path.join(output_path, 'big.sdf'), 'w')
     big_counter = 0
+    big_collector = []
+    column_names = list(merged_results.columns.values)
     # os.mkdir(os.path.join(output_path, 'covalent'))
     # covalent_counter = 0
     # os.mkdir(os.path.join(output_path, 'building-block'))
@@ -188,33 +197,49 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors):
     for index, row in merged_results.iterrows():
         mol = Chem.MolFromSmiles(row['smiles'])
         mol = Chem.AddHs(mol)
-        mol.SetProp('_Name', row['smiles'])
-        for vendor in vendors:
-            mol.SetProp(vendor, row[vendor])
+        properties = {name: row[name] for name in column_names}
         molecular_weight = ExactMolWt(mol)
         if molecular_weight < 1200:
             if molecular_weight < 300:
-                fragment.write(mol)
                 fragment_counter += 1
-                if fragment_counter % mols_per_file == 0:
-                    fragment.close()
-                    fragment = Chem.SDWriter(os.path.join(output_path, 'fragment_{}.sdf'.format(
-                        int(fragment_counter / mols_per_file) + 1)))
+                fragment_collector.append(sdf_text(mol, 'fragment_' + str(fragment_counter), properties))
+                if fragment_counter % mols_per_file == 0 or len(fragment_collector) >= 1000:
+                    fragment.write('\n'.join(fragment_collector))
+                    fragment_collector = []
+                    if fragment_counter % mols_per_file == 0:
+                        fragment.close()
+                        fragment = open(os.path.join(output_path, 'fragment_{}.sdf'.format(
+                            int(fragment_counter / mols_per_file) + 1)))
             elif 300 <= molecular_weight < 700:
-                drug_like.write(mol)
                 drug_like_counter += 1
-                if drug_like_counter % mols_per_file == 0:
-                    drug_like.close()
-                    drug_like = Chem.SDWriter(os.path.join(output_path, 'drug_like_{}.sdf'.format(
-                        int(drug_like_counter / mols_per_file) + 1)))
+                drug_like_collector.append(sdf_text(mol, 'drug_like_' + str(drug_like_counter), properties))
+                if drug_like_counter % mols_per_file == 0 or len(drug_like_collector) >= 1000:
+                    drug_like.write('\n'.join(drug_like_collector))
+                    drug_like_collector = []
+                    if drug_like_counter % mols_per_file == 0:
+                        drug_like.close()
+                        drug_like = open(os.path.join(output_path, 'drug_like_{}.sdf'.format(
+                            int(drug_like_counter / mols_per_file) + 1)))
             else:
-                big.write(mol)
                 big_counter += 1
-                if big_counter % mols_per_file == 0:
-                    big.close()
-                    big = Chem.SDWriter(os.path.join(output_path, 'big_{}.sdf'.format(
-                        int(big_counter / mols_per_file) + 1)))
+                big_collector.append(sdf_text(mol, 'big_' + str(big_counter), properties))
+                if big_counter % mols_per_file == 0 or len(big_collector) >= 1000:
+                    big.write('\n'.join(big_collector))
+                    big_collector = []
+                    if big_counter % mols_per_file == 0:
+                        big.close()
+                        big = open(os.path.join(output_path, 'big_{}.sdf'.format(
+                            int(big_counter / mols_per_file) + 1)))
         mol_counter += 1
         update_progress(mol_counter / num_mols, 'Progress of writing',
                         ((time.time() - start_time) / mol_counter) * (num_mols - mol_counter))
+    if len(fragment_collector) > 0:
+        fragment.write('\n'.join(fragment_collector))
+        fragment.close()
+    if len(drug_like_collector) > 0:
+        drug_like.write('\n'.join(drug_like_collector))
+        drug_like.close()
+    if len(big_collector) > 0:
+        big.write('\n'.join(big_collector))
+        big.close()
     return
