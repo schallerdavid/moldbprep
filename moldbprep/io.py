@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 from rdkit import Chem
 from rdkit.Chem.Descriptors import ExactMolWt
@@ -150,7 +151,7 @@ def update_progress(progress, progress_info, eta):
     return
 
 
-def sdf_text(mol, mol_name, properties):
+def sdf_text(mol, properties):
     """
     This function converts an RDKit molecule into an sdf representation as text.
 
@@ -171,14 +172,45 @@ def sdf_text(mol, mol_name, properties):
         Molecule as text in sdf format.
 
     """
-    mol.SetProp('_Name', mol_name)
     sdf_text = Chem.MolToMolBlock(mol)
     sdf_text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
     sdf_text += '\n$$$$\n'
     return sdf_text
 
 
-def write_sdf(merged_results, mols_per_file, output_path):
+def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, fragment_counter, drug_like_counter,
+                    big_counter, parent_fragment_collector, parent_drug_like_collector, parent_big_collector):
+    fragment_collector, drug_like_collector, big_collector = [], [], []
+    for index, row in merged_results.iterrows():
+        mol = Chem.MolFromSmiles(row['smiles'])
+        mol = Chem.AddHs(mol)
+        mol.SetProp('_Name', row['smiles'])
+        properties = {vendor: row[vendor] for vendor in vendors}
+        molecular_weight = ExactMolWt(mol)
+        if molecular_weight < 1200:
+            if molecular_weight < 300:
+                with fragment_counter.get_lock():
+                    fragment_counter.value += 1
+                fragment_collector.append(sdf_text(mol, properties))
+            elif 300 <= molecular_weight < 700:
+                with drug_like_counter.get_lock():
+                    drug_like_counter.value += 1
+                drug_like_collector.append(sdf_text(mol, properties))
+            else:
+                with big_counter.get_lock():
+                    big_counter.value += 1
+                big_collector.append(sdf_text(mol, properties))
+        with mol_counter.get_lock():
+            mol_counter.value += 1
+            update_progress(mol_counter.value / num_mols, 'Progress of writing',
+                            ((time.time() - start_time) / mol_counter.value) * (num_mols - mol_counter.value))
+    parent_fragment_collector.extend(fragment_collector)
+    parent_drug_like_collector.extend(drug_like_collector)
+    parent_big_collector.extend(big_collector)
+    return
+
+
+def write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes):
     """
     This function writes molecules to sd-files with vendor IDs as properties.
 
@@ -197,69 +229,83 @@ def write_sdf(merged_results, mols_per_file, output_path):
     if os.path.isdir(output_path):
         shutil.rmtree(output_path)
     os.mkdir(output_path)
-    mol_counter = 0
+    manager = multiprocessing.Manager()
+    mol_counter = multiprocessing.Value('i', 0)
     num_mols = merged_results.shape[0]
     fragment = open(os.path.join(output_path, 'fragment.sdf'), 'w')
-    fragment_counter = 0
-    fragment_collector = []
+    fragment_file_counter = 0
+    fragment_counter = multiprocessing.Value('i', 0)
+    fragment_collector = manager.list()
     drug_like = open(os.path.join(output_path, 'drug-like.sdf'), 'w')
-    drug_like_counter = 0
-    drug_like_collector = []
+    drug_like_file_counter = 0
+    drug_like_counter = multiprocessing.Value('i', 0)
+    drug_like_collector = manager.list()
     big = open(os.path.join(output_path, 'big.sdf'), 'w')
-    big_counter = 0
-    big_collector = []
-    column_names = list(merged_results.columns.values)
-    # os.mkdir(os.path.join(output_path, 'covalent'))
-    # covalent_counter = 0
-    # os.mkdir(os.path.join(output_path, 'building-block'))
-    # building_block_counter_counter = 0
+    big_file_counter = 0
+    big_counter = multiprocessing.Value('i', 0)
+    big_collector = manager.list()
+    mols_per_job = 1000
+    mols_in_memory = 10000
+    jobs = []
+    for mol_start in range(0, num_mols, mols_per_job):
+        if mol_start + mols_per_job <= num_mols:
+            jobs.append((mol_start, mol_start + mols_per_job))
+        else:
+            jobs.append((mol_start, num_mols))
+    job_chunks = []
+    for job_start in range(0, len(jobs), num_processes):
+        if job_start + num_processes <= len(jobs):
+            job_chunks.append((job_start, job_start + num_processes))
+        else:
+            job_chunks.append((job_start, len(jobs)))
     start_time = time.time()
-    for index, row in merged_results.iterrows():
-        mol = Chem.MolFromSmiles(row['smiles'])
-        mol = Chem.AddHs(mol)
-        properties = {name: row[name] for name in column_names}
-        molecular_weight = ExactMolWt(mol)
-        if molecular_weight < 1200:
-            if molecular_weight < 300:
-                fragment_counter += 1
-                fragment_collector.append(sdf_text(mol, 'fragment_' + str(fragment_counter), properties))
-                if fragment_counter % mols_per_file == 0 or len(fragment_collector) >= 1000:
-                    fragment.write('\n'.join(fragment_collector))
-                    fragment_collector = []
-                    if fragment_counter % mols_per_file == 0:
-                        fragment.close()
-                        fragment = open(os.path.join(output_path, 'fragment_{}.sdf'.format(
-                            int(fragment_counter / mols_per_file) + 1)))
-            elif 300 <= molecular_weight < 700:
-                drug_like_counter += 1
-                drug_like_collector.append(sdf_text(mol, 'drug_like_' + str(drug_like_counter), properties))
-                if drug_like_counter % mols_per_file == 0 or len(drug_like_collector) >= 1000:
-                    drug_like.write('\n'.join(drug_like_collector))
-                    drug_like_collector = []
-                    if drug_like_counter % mols_per_file == 0:
-                        drug_like.close()
-                        drug_like = open(os.path.join(output_path, 'drug_like_{}.sdf'.format(
-                            int(drug_like_counter / mols_per_file) + 1)))
-            else:
-                big_counter += 1
-                big_collector.append(sdf_text(mol, 'big_' + str(big_counter), properties))
-                if big_counter % mols_per_file == 0 or len(big_collector) >= 1000:
-                    big.write('\n'.join(big_collector))
-                    big_collector = []
-                    if big_counter % mols_per_file == 0:
-                        big.close()
-                        big = open(os.path.join(output_path, 'big_{}.sdf'.format(
-                            int(big_counter / mols_per_file) + 1)))
-        mol_counter += 1
-        update_progress(mol_counter / num_mols, 'Progress of writing',
-                        ((time.time() - start_time) / mol_counter) * (num_mols - mol_counter))
+    for job_start, job_end in job_chunks:
+        processes = [multiprocessing.Process(target=sdf_text_worker,
+                                             args=(merged_results[jobs[job_id][0]: jobs[job_id][1]], vendors, num_mols,
+                                                   start_time, mol_counter, fragment_counter, drug_like_counter,
+                                                   big_counter, fragment_collector, drug_like_collector, big_collector))
+                     for job_id in range(job_start, job_end)]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
+        if fragment_counter.value > mols_per_file:
+            fragment.write('\n'.join(fragment_collector[0:mols_per_file - fragment_counter.value]))
+            fragment_collector = manager.list(fragment_collector[mols_per_file - fragment_counter.value:])
+            fragment_counter.value = len(fragment_collector)
+            fragment.close()
+            fragment_file_counter += 1
+            fragment = open(os.path.join(output_path, 'fragment_{}.sdf'.format(fragment_file_counter)), 'w')
+        if len(fragment_collector) >= mols_in_memory:
+            fragment.write('\n'.join(fragment_collector))
+            fragment_collector = manager.list()
+        if drug_like_counter.value > mols_per_file:
+            drug_like.write('\n'.join(drug_like_collector[0:mols_per_file - drug_like_counter.value]))
+            drug_like_collector = manager.list(drug_like_collector[mols_per_file - drug_like_counter.value:])
+            drug_like_counter.value = len(drug_like_collector)
+            drug_like.close()
+            drug_like_file_counter += 1
+            drug_like = open(os.path.join(output_path, 'drug-like_{}.sdf'.format(drug_like_file_counter)), 'w')
+        if len(drug_like_collector) >= mols_in_memory:
+            drug_like.write('\n'.join(drug_like_collector))
+            drug_like_collector = manager.list()
+        if big_counter.value > mols_per_file:
+            big.write('\n'.join(big_collector[0:mols_per_file - big_counter.value]))
+            big_collector = manager.list(big_collector[mols_per_file - big_counter.value:])
+            big_counter.value = len(big_collector)
+            big.close()
+            big_file_counter += 1
+            big = open(os.path.join(output_path, 'big_{}.sdf'.format(big_file_counter)), 'w')
+        if len(big_collector) >= mols_in_memory:
+            big.write('\n'.join(big_collector))
+            big_collector = manager.list()
     if len(fragment_collector) > 0:
         fragment.write('\n'.join(fragment_collector))
-        fragment.close()
     if len(drug_like_collector) > 0:
         drug_like.write('\n'.join(drug_like_collector))
-        drug_like.close()
     if len(big_collector) > 0:
         big.write('\n'.join(big_collector))
-        big.close()
+    fragment.close()
+    drug_like.close()
+    big.close()
     return
