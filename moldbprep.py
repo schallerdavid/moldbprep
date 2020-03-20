@@ -69,5 +69,5 @@ if __name__ == "__main__":
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     merged_results = merge_ids(results, vendors)
     print('Writing results...')
-    write_sdf(merged_results, mols_per_file, output_path)
+    write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes)
     print('Finished after {} s.'.format(time.time() - start_time))
