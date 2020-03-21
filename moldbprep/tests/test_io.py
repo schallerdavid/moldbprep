@@ -25,8 +25,8 @@ def test_time_to_text(time, text):
 
 
 def test_sdf_text():
-    assert sdf_text(Chem.MolFromSmiles('CCC'), '1', {'db1': '1', 'db2': ''}) == \
-           '1\n' \
+    assert sdf_text(Chem.MolFromSmiles('CCC'), {'db1': '1', 'db2': ''}) == \
+           '\n' \
            '     RDKit          2D\n' \
            '\n' \
            '  3  2  0  0  0  0  0  0  0  0999 V2000\n' \
