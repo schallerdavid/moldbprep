@@ -5,6 +5,7 @@ from molvs import Standardizer
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.AllChem import ReactionFromSmarts
+from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 import time
 
 
@@ -65,7 +66,30 @@ def protonate_mol(mol):
     return mol
 
 
-def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors):
+def enumerate_stereo_isomers(mol, max_stereo_isomers):
+    """
+    This function emumerates stereo isomers.
+
+    Parameters
+    ----------
+    mol : rdkit.Chem.rdchem.Mol
+        An RDKit molecule.
+
+    max_stereo_isomers: int
+        Maximal number of stereo isomers to generate.
+
+    Returns
+    -------
+    isomers : tuple
+        A tuple of enumerated RDKit molecules.
+
+    """
+    options = StereoEnumerationOptions(tryEmbedding=False, unique=True, maxIsomers=max_stereo_isomers)
+    isomers = tuple(EnumerateStereoisomers(mol, options=options))
+    return isomers
+
+
+def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers):
     """
     This function passes molecules to the standardization functions.
 
@@ -100,9 +124,10 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors):
                 mol = Standardizer().standardize(mol)
                 mol = largest_fragment(mol)
                 mol = protonate_mol(mol)
-                mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
-                mol_as_list[1 + vendor_position] = identifier
-                processed_mols.append(mol_as_list)
+                for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
+                    mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
+                    mol_as_list[1 + vendor_position] = identifier
+                    processed_mols.append(mol_as_list)
                 with mol_counter.get_lock():
                     mol_counter.value += 1
                 update_progress(mol_counter.value / num_mols, 'Progress of standardization',

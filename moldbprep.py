@@ -43,10 +43,13 @@ if __name__ == "__main__":
     parser.add_argument('-o', dest='output_path', help='path to output folder', default='.')
     parser.add_argument('-p', dest='num_processes', help='number of parallel processes', default=1)
     parser.add_argument('-m', dest='mols_per_file', help='number of molecules per file', default=1000000)
+    parser.add_argument('-s', dest='max_stereo_isomers',
+                        help='maximal number of stereo isomers to generate per molecule', default=8)
     input_paths = parser.parse_args().input_paths.split(',')
     output_path = parser.parse_args().output_path
     num_processes = int(parser.parse_args().num_processes)
     mols_per_file = int(parser.parse_args().mols_per_file)
+    max_stereo_isomers = int(parser.parse_args().max_stereo_isomers)
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
     vendors = [value[1] for value in sdf_file_dict.values()]
@@ -59,8 +62,8 @@ if __name__ == "__main__":
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
-                                                                        start_time, vendors)) for process_id in
-                 range(num_processes)]
+                                                                        start_time, vendors, max_stereo_isomers))
+                 for process_id in range(num_processes)]
     for process in processes:
         process.start()
     for process in processes:

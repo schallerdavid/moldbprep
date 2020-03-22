@@ -1,4 +1,4 @@
-from moldbprep.standardize import largest_fragment, protonate_mol, merge_ids
+from moldbprep.standardize import largest_fragment, protonate_mol, enumerate_stereo_isomers, merge_ids
 import pandas as pd
 import pytest
 from rdkit import Chem
@@ -27,6 +27,12 @@ def test_largest_fragment(input_smiles, output_smiles):
 def test_protonate_mol(input_smiles, output_smiles):
     assert Chem.MolToSmiles(protonate_mol(Chem.MolFromSmiles(input_smiles))) == \
            Chem.MolToSmiles(Chem.MolFromSmiles(output_smiles))
+
+
+def test_enumerate_stereo_isomers():
+    assert sorted([Chem.MolToSmiles(mol) for mol in enumerate_stereo_isomers(Chem.MolFromSmiles('FC(Cl)Br'), 8)]) == \
+        sorted(['F[C@H](Cl)Br', 'F[C@@H](Cl)Br'])
+    assert len(enumerate_stereo_isomers(Chem.MolFromSmiles('BrC=CC1OC(C2)(F)C2(Cl)C1'), 4)) == 4
 
 
 def test_merge_ids():
