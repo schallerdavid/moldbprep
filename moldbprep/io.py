@@ -174,7 +174,7 @@ def sdf_text(mol, properties):
     """
     sdf_text = Chem.MolToMolBlock(mol)
     sdf_text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
-    sdf_text += '\n$$$$\n'
+    sdf_text += '\n$$$$'
     return sdf_text
 
 
