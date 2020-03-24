@@ -3,6 +3,7 @@ import pandas as pd
 from molvs.standardize import Standardizer, LargestFragmentChooser, Uncharger
 from molvs.tautomer import TautomerCanonicalizer
 from rdkit import Chem
+from rdkit import RDLogger
 from rdkit.Chem.AllChem import ReactionFromSmarts
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 import time
@@ -70,7 +71,7 @@ def enumerate_stereo_isomers(mol, max_stereo_isomers):
     return isomers
 
 
-def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers):
+def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers, verbose=False):
     """
     This function passes molecules to the standardization functions.
 
@@ -91,7 +92,18 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
     start_time: float
         Starting time of molecule processing.
 
+    vendors: list
+        List of vendors.
+
+    max_stereo_isomers: int
+        Maximal number of stereo isomers to generater per molecule.
+
+    verbose : bool
+        If RDKit warning should be displayed.
+
     """
+    if not verbose:
+        RDLogger.DisableLog('rdApp.*')
     job = 'initiate'
     processed_mols = []
     while job is not None:
