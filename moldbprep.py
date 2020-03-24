@@ -56,6 +56,7 @@ if __name__ == "__main__":
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
     vendors = [value[1] for value in sdf_file_dict.values()]
     num_mols = sum([value[0] for value in sdf_file_dict.values()])
+    print('Standardizing {} molecules from {} databases...'.format(num_mols, len(vendors)))
     start_time = time.time()
     manager = multiprocessing.Manager()
     results = manager.list()
@@ -74,6 +75,6 @@ if __name__ == "__main__":
     print('Processing results...')
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     merged_results = merge_ids(results, vendors)
-    print('Writing results...')
+    print('Writing {} molecules...'.format(merged_results.shape[0]))
     write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes)
     print('Finished after {} s.'.format(time.time() - start_time))

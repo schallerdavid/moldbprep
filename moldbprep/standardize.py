@@ -157,7 +157,9 @@ def merge_ids(results, vendors):
 
     """
     grouped_per_vendor = []
+    print('Merging molecules and identifiers for each vendor...')
     for vendor in vendors:
+        print('Merging {} database...'.format(vendor))
         vendor_results = results[results[vendor] != '']
         joined_ids = vendor_results.groupby(['smiles'])[vendor].apply(','.join).to_frame().reset_index()
         other_vendors = pd.DataFrame([[''] * (len(vendors) - 1)] * joined_ids.shape[0], columns=[x for x in vendors
@@ -165,7 +167,9 @@ def merge_ids(results, vendors):
         grouped_per_vendor.append(pd.concat([joined_ids, other_vendors], axis=1))
     grouped_per_vendor = pd.concat(grouped_per_vendor).reset_index(drop=True)
     grouped = []
+    print('Merging molecules and identifiers into main database...')
     for vendor in vendors:
+        print('Merging {} database...'.format(vendor))
         if len(grouped) == 0:
             grouped.append(grouped_per_vendor.groupby(['smiles'])[vendor].apply(','.join).str.strip(',').reset_index())
         else:
