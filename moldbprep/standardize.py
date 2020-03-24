@@ -1,31 +1,11 @@
 from moldbprep.io import update_progress
-from molvs.charge import Uncharger
-from molvs.fragment import LargestFragmentChooser
-from molvs import Standardizer
 import pandas as pd
+from molvs.standardize import Standardizer, LargestFragmentChooser, Uncharger
+from molvs.tautomer import TautomerCanonicalizer
 from rdkit import Chem
 from rdkit.Chem.AllChem import ReactionFromSmarts
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 import time
-
-
-def largest_fragment(mol):
-    """
-    This function picks the biggest fragment.
-
-    Parameters
-    ----------
-    mol : rdkit.Chem.rdchem.Mol
-        An RDKit molecule.
-
-    Returns
-    -------
-    mol : rdkit.Chem.rdchem.Mol
-        An RDKit molecule without small fragments.
-
-    """
-    mol = Chem.MolFromSmiles(Chem.MolToSmiles(LargestFragmentChooser().choose(mol)))
-    return mol
 
 
 def protonate_mol(mol):
@@ -121,9 +101,15 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
             for mol_id in range(job['mol_start'], job['mol_end'] + 1):
                 mol = supplier[mol_id]
                 identifier = mol.GetProp(job['identifier_field'])
+                # default standardization from molvs
                 mol = Standardizer().standardize(mol)
-                mol = largest_fragment(mol)
+                # choose largest fragment
+                mol = LargestFragmentChooser().choose(mol)
+                # canonicalize tautomer
+                mol = TautomerCanonicalizer().canonicalize(mol)
+                # protonate mol
                 mol = protonate_mol(mol)
+                # enumerate stereo isomers and append mols
                 for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
                     mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
                     mol_as_list[1 + vendor_position] = identifier

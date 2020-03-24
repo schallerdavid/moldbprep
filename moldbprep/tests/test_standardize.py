@@ -1,16 +1,7 @@
-from moldbprep.standardize import largest_fragment, protonate_mol, enumerate_stereo_isomers, merge_ids
+from moldbprep.standardize import protonate_mol, enumerate_stereo_isomers, merge_ids
 import pandas as pd
 import pytest
 from rdkit import Chem
-
-
-@pytest.mark.parametrize("input_smiles, output_smiles", [
-    ("[Cl-].[NH3+]CCC1=CC=CC=C1", "[NH3+]CCC1=CC=CC=C1"),
-    ("[O-]C=O.[NH3+]CCC1=CC=CC=C1", "[NH3+]CCC1=CC=CC=C1")
-])
-def test_largest_fragment(input_smiles, output_smiles):
-    assert Chem.MolToSmiles(largest_fragment(Chem.MolFromSmiles(input_smiles))) == \
-           Chem.MolToSmiles(Chem.MolFromSmiles(output_smiles))
 
 
 @pytest.mark.parametrize("input_smiles, output_smiles", [

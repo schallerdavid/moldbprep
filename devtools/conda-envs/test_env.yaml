@@ -5,6 +5,7 @@ dependencies:
   - python >= 3.6
   - pip
   - molvs >= 0.1.1
+  - rdkit >= 2018.09.1
 
     # Testing
   - pytest
