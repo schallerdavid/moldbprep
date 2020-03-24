@@ -5,9 +5,10 @@ Prepare, standardize and merge molecule databases for virtual screening.
 Handles the primary functions
 """
 import argparse
-from moldbprep.io import count_sdf_mols, database_prompt, write_sdf
+from moldbprep.io import count_sdf_mols, database_prompt, write_sdf, print_statistics
 from moldbprep.standardize import standardize_mols, merge_ids
 import multiprocessing
+import os
 import pandas as pd
 import time
 
@@ -60,21 +61,25 @@ if __name__ == "__main__":
     start_time = time.time()
     manager = multiprocessing.Manager()
     results = manager.list()
+    failures = manager.list()
     jobs = manager.list()
     for job in standardize_processes(sdf_file_dict, 500):
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
                                                                         start_time, vendors, max_stereo_isomers,
-                                                                        verbose))
+                                                                        failures, verbose))
                  for process_id in range(num_processes)]
     for process in processes:
         process.start()
     for process in processes:
         process.join()
+    with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
+        file.write('\n'.join(failures))
     print('Processing results...')
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     merged_results = merge_ids(results, vendors)
+    print_statistics(merged_results, vendors)
     print('Writing {} molecules...'.format(merged_results.shape[0]))
     write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes)
     print('Finished after {} s.'.format(time.time() - start_time))

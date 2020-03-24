@@ -71,7 +71,8 @@ def enumerate_stereo_isomers(mol, max_stereo_isomers):
     return isomers
 
 
-def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers, verbose=False):
+def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers, failures,
+                     verbose=False):
     """
     This function passes molecules to the standardization functions.
 
@@ -114,19 +115,22 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
             for mol_id in range(job['mol_start'], job['mol_end'] + 1):
                 mol = supplier[mol_id]
                 identifier = mol.GetProp(job['identifier_field'])
-                # default standardization from molvs
-                mol = Standardizer().standardize(mol)
-                # choose largest fragment
-                mol = LargestFragmentChooser().choose(mol)
-                # canonicalize tautomer
-                mol = TautomerCanonicalizer().canonicalize(mol)
-                # protonate mol
-                mol = protonate_mol(mol)
-                # enumerate stereo isomers and append mols
-                for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
-                    mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
-                    mol_as_list[1 + vendor_position] = identifier
-                    processed_mols.append(mol_as_list)
+                try:
+                    # default standardization from molvs
+                    mol = Standardizer().standardize(mol)
+                    # choose largest fragment
+                    mol = LargestFragmentChooser().choose(mol)
+                    # canonicalize tautomer
+                    mol = TautomerCanonicalizer().canonicalize(mol)
+                    # protonate mol
+                    mol = protonate_mol(mol)
+                    # enumerate stereo isomers and append mols
+                    for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
+                        mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
+                        mol_as_list[1 + vendor_position] = identifier
+                        processed_mols.append(mol_as_list)
+                except:
+                    failures.append(Chem.MolToSmiles(mol))
                 with mol_counter.get_lock():
                     mol_counter.value += 1
                 update_progress(mol_counter.value / num_mols, 'Progress of standardization',

@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.Descriptors import ExactMolWt
 import shutil
@@ -308,4 +309,27 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes
     fragment.close()
     drug_like.close()
     big.close()
+    return
+
+
+def print_statistics(merged_results, vendors):
+    """
+    Print statistics about merged databases.
+
+    Parameters
+    ----------
+    merged_results : pandas.DataFrame
+        Dataframe containing the merged results.
+
+    vendors : list
+        List of vendors.
+
+    """
+    vendor_matches = {vendor: merged_results[vendor] != '' for vendor in vendors}
+    print('Vendor\tTotal\tUnique')
+    for vendor in vendors:
+        total = vendor_matches[vendor].sum()
+        unique = (vendor_matches[vendor] > pd.concat([vendor_matches[x] for x in vendors if x != vendor], axis=1).max(
+            axis=1)).sum()
+        print('\t'.join([vendor, str(total), str(unique)]))
     return
