@@ -117,7 +117,7 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                 if job['identifier_field'] == 'None':
                     identifier = 'unknown'
                 else:
-                    identifier = mol.GetProp(mol.GetProp(job['identifier_field']))
+                    identifier = mol.GetProp(job['identifier_field'])
                 try:
                     # default standardization from molvs
                     mol = Standardizer().standardize(mol)
