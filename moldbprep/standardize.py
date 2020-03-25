@@ -114,7 +114,10 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
             supplier = Chem.SDMolSupplier(job['sdf_path'])
             for mol_id in range(job['mol_start'], job['mol_end'] + 1):
                 mol = supplier[mol_id]
-                identifier = mol.GetProp(job['identifier_field'])
+                if job['identifier_field'] == 'None':
+                    identifier = 'unknown'
+                else:
+                    identifier = mol.GetProp(mol.GetProp(job['identifier_field']))
                 try:
                     # default standardization from molvs
                     mol = Standardizer().standardize(mol)

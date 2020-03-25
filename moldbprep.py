@@ -78,6 +78,7 @@ if __name__ == "__main__":
         file.write('\n'.join(failures))
     print('Processing results...')
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
+    print(results)
     merged_results = merge_ids(results, vendors)
     print_statistics(merged_results, vendors)
     print('Writing {} molecules...'.format(merged_results.shape[0]))
