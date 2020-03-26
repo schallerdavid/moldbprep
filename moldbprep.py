@@ -55,7 +55,7 @@ if __name__ == "__main__":
     verbose = parser.parse_args().verbose
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
-    vendors = [value[1] for value in sdf_file_dict.values()]
+    vendors = list(set([value[1] for value in sdf_file_dict.values()]))
     num_mols = sum([value[0] for value in sdf_file_dict.values()])
     print('Standardizing {} molecules from {} databases...'.format(num_mols, len(vendors)))
     start_time = time.time()
