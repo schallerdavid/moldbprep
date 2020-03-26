@@ -5,7 +5,7 @@ Prepare, standardize and merge molecule databases for virtual screening.
 Handles the primary functions
 """
 import argparse
-from moldbprep.io import count_sdf_mols, database_prompt, write_sdf, print_statistics
+from moldbprep.io import count_sdf_mols, database_prompt, write_sdf, write_statistics
 from moldbprep.standardize import standardize_mols, merge_ids
 import multiprocessing
 import os
@@ -74,12 +74,13 @@ if __name__ == "__main__":
         process.start()
     for process in processes:
         process.join()
-    with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
-        file.write('\n'.join(failures))
+    if len(failures) > 0:
+        with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
+            file.write('\n'.join(failures))
     print('Processing results...')
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     merged_results = merge_ids(results, vendors)
-    print_statistics(merged_results, vendors)
     print('Writing {} molecules...'.format(merged_results.shape[0]))
     write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes)
+    write_statistics(merged_results, vendors, output_path, len(failures))
     print('Finished after {} s.'.format(time.time() - start_time))

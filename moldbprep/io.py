@@ -312,9 +312,9 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes
     return
 
 
-def print_statistics(merged_results, vendors):
+def write_statistics(merged_results, vendors, output_path, failure_count):
     """
-    Print statistics about merged databases.
+    Write statistics about merged databases.
 
     Parameters
     ----------
@@ -324,12 +324,23 @@ def print_statistics(merged_results, vendors):
     vendors : list
         List of vendors.
 
+    output_path : str
+        Path to output directory.
+
     """
     vendor_matches = {vendor: merged_results[vendor] != '' for vendor in vendors}
-    print('Vendor\tTotal\tUnique')
-    for vendor in vendors:
-        total = vendor_matches[vendor].sum()
-        unique = (vendor_matches[vendor] > pd.concat([vendor_matches[x] for x in vendors if x != vendor], axis=1).max(
-            axis=1)).sum()
-        print('\t'.join([vendor, str(total), str(unique)]))
+    with open(os.path.join(output_path, 'database.statistics'), 'w') as file:
+        file.write('Vendor\tTotal\tUnique\n')
+        for vendor in vendors:
+            total = vendor_matches[vendor].sum()
+            unique = (vendor_matches[vendor] > pd.concat([vendor_matches[x] for x in vendors if x != vendor], axis=1
+                                                         ).max(axis=1)).sum()
+            file.write('\t'.join([vendor, str(total), str(unique)]) + '\n')
+        file.write('\nCategory\tTotal\n')
+        for file_name in ['fragment', 'drug-like', 'big']:
+            mol_count = count_sdf_mols(os.path.join(output_path,file_name + '.sdf'))
+            file.write('{}\t{}\n'.format(file_name, mol_count))
+            if mol_count == 0:
+                os.remove(os.path.join(output_path, file_name + '.sdf'))
+        file.write('\nfailures\t{}'.format(failure_count))
     return
