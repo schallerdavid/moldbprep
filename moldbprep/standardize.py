@@ -114,11 +114,17 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
             supplier = Chem.SDMolSupplier(job['sdf_path'])
             for mol_id in range(job['mol_start'], job['mol_end'] + 1):
                 mol = supplier[mol_id]
-                try:
-                    if job['identifier_field'] == 'None':
-                        identifier = 'unknown'
-                    else:
+                if job['identifier_field'] == 'None':
+                    identifier = 'unknown'
+                else:
+                    try:
                         identifier = mol.GetProp(job['identifier_field'])
+                    except AttributeError:
+                        identifier = 'unknown'
+                try:
+                    # generate smiles for error catching
+                    smiles = 'unknown'
+                    smiles = Chem.MolToSmiles(mol)
                     # default standardization from molvs
                     mol = Standardizer().standardize(mol)
                     # choose largest fragment
@@ -132,10 +138,8 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                         mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
                         mol_as_list[1 + vendor_position] = identifier
                         processed_mols.append(mol_as_list)
-                except AttributeError:
-                    failures.append(' '.join([Chem.MolToSmiles(mol), job['vendor'], 'unknown']))
                 except:
-                    failures.append(' '.join([Chem.MolToSmiles(mol), job['vendor'], identifier]))
+                    failures.append(' '.join([smiles, job['vendor'], identifier]))
                 with mol_counter.get_lock():
                     mol_counter.value += 1
                 update_progress(mol_counter.value / num_mols, 'Progress of standardization',
