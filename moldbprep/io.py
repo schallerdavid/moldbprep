@@ -333,8 +333,11 @@ def write_statistics(merged_results, vendors, output_path, failure_count):
         file.write('Vendor\tTotal\tUnique\n')
         for vendor in vendors:
             total = vendor_matches[vendor].sum()
-            unique = (vendor_matches[vendor] > pd.concat([vendor_matches[x] for x in vendors if x != vendor], axis=1
-                                                         ).max(axis=1)).sum()
+            if len(vendors) > 1:
+                unique = (vendor_matches[vendor] > pd.concat([vendor_matches[x] for x in vendors if x != vendor], axis=1
+                                                             ).max(axis=1)).sum()
+            else:
+                unique = total
             file.write('\t'.join([vendor, str(total), str(unique)]) + '\n')
         file.write('\nCategory\tTotal\n')
         for file_name in ['fragment', 'drug-like', 'big']:
