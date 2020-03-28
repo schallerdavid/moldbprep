@@ -180,14 +180,19 @@ def sdf_text(mol, properties):
 
 
 def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, fragment_counter, drug_like_counter,
-                    big_counter, parent_fragment_collector, parent_drug_like_collector, parent_big_collector):
+                    big_counter, parent_fragment_collector, parent_drug_like_collector, parent_big_collector,
+                    failures):
     fragment_collector, drug_like_collector, big_collector = [], [], []
     for index, row in merged_results.iterrows():
-        mol = Chem.MolFromSmiles(row['smiles'])
-        mol = Chem.AddHs(mol)
-        mol.SetProp('_Name', row['smiles'])
-        properties = {vendor: row[vendor] for vendor in vendors}
-        molecular_weight = ExactMolWt(mol)
+        try:
+            mol = Chem.MolFromSmiles(row['smiles'])
+            mol = Chem.AddHs(mol)
+            mol.SetProp('_Name', row['smiles'])
+            properties = {vendor: row[vendor] for vendor in vendors}
+            molecular_weight = ExactMolWt(mol)
+        except:
+            failures.append(' '.join(['write_error', row['smiles']]))
+            molecular_weight = 10000
         if molecular_weight < 1200:
             if molecular_weight < 300:
                 with fragment_counter.get_lock():
@@ -211,7 +216,7 @@ def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, 
     return
 
 
-def write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes):
+def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num_processes):
     """
     This function writes molecules to sd-files with vendor IDs as properties.
 
@@ -264,7 +269,8 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes
         processes = [multiprocessing.Process(target=sdf_text_worker,
                                              args=(merged_results[jobs[job_id][0]: jobs[job_id][1]], vendors, num_mols,
                                                    start_time, mol_counter, fragment_counter, drug_like_counter,
-                                                   big_counter, fragment_collector, drug_like_collector, big_collector))
+                                                   big_counter, fragment_collector, drug_like_collector, big_collector,
+                                                   failures))
                      for job_id in range(job_start, job_end)]
         for process in processes:
             process.start()

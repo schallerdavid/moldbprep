@@ -139,7 +139,7 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                         mol_as_list[1 + vendor_position] = identifier
                         processed_mols.append(mol_as_list)
                 except:
-                    failures.append(' '.join([smiles, job['vendor'], identifier]))
+                    failures.append(' '.join(['standardize_error', smiles, job['vendor'], identifier]))
                 with mol_counter.get_lock():
                     mol_counter.value += 1
                 update_progress(mol_counter.value / num_mols, 'Progress of standardization',

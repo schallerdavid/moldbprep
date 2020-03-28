@@ -74,13 +74,14 @@ if __name__ == "__main__":
         process.start()
     for process in processes:
         process.join()
+    print('Processing results...')
+    results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
+    results = merge_ids(results, vendors)
+    print('Writing {} molecules...'.format(results.shape[0]))
+    write_sdf(results, mols_per_file, output_path, vendors, failures, num_processes)
+    failures = list(failures)
     if len(failures) > 0:
         with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
             file.write('\n'.join(failures))
-    print('Processing results...')
-    results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
-    merged_results = merge_ids(results, vendors)
-    print('Writing {} molecules...'.format(merged_results.shape[0]))
-    write_sdf(merged_results, mols_per_file, output_path, vendors, num_processes)
-    write_statistics(merged_results, vendors, output_path, len(failures))
+    write_statistics(results, vendors, output_path, len(failures))
     print('Finished after {} s.'.format(time.time() - start_time))
