@@ -333,6 +333,9 @@ def write_statistics(merged_results, vendors, output_path, failure_count):
     output_path : str
         Path to output directory.
 
+    failure_count : int
+        Number of failures during standardization and writing.
+
     """
     vendor_matches = {vendor: merged_results[vendor] != '' for vendor in vendors}
     with open(os.path.join(output_path, 'database.statistics'), 'w') as file:
@@ -346,10 +349,15 @@ def write_statistics(merged_results, vendors, output_path, failure_count):
                 unique = total
             file.write('\t'.join([vendor, str(total), str(unique)]) + '\n')
         file.write('\nCategory\tTotal\n')
+        directory_contents = os.listdir(output_path)
         for file_name in ['fragment', 'drug-like', 'big']:
-            mol_count = count_sdf_mols(os.path.join(output_path,file_name + '.sdf'))
+            mol_count = 0
+            for directory_content in directory_contents:
+                if file_name in directory_content:
+                    mol_count_file = count_sdf_mols(os.path.join(output_path, directory_content))
+                    mol_count += mol_count_file
+                    if mol_count_file == 0:
+                        os.remove(os.path.join(output_path, file_name + '.sdf'))
             file.write('{}\t{}\n'.format(file_name, mol_count))
-            if mol_count == 0:
-                os.remove(os.path.join(output_path, file_name + '.sdf'))
         file.write('\nfailures\t{}'.format(failure_count))
     return
