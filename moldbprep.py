@@ -78,7 +78,7 @@ if __name__ == "__main__":
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     results = merge_ids(results, vendors)
     print('Writing {} molecules...'.format(results.shape[0]))
-    write_sdf(results, mols_per_file, output_path, vendors, failures, num_processes)
+    write_sdf(results, mols_per_file, output_path, vendors, failures, num_processes, verbose)
     failures = list(failures)
     if len(failures) > 0:
         with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
