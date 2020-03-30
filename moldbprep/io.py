@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import pandas as pd
 from rdkit import Chem
+from rdkit import RDLogger
 from rdkit.Chem.Descriptors import ExactMolWt
 import shutil
 import sys
