@@ -235,9 +235,8 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num
         Directory for writing sd-files.
 
     """
-    if os.path.isdir(output_path):
-        shutil.rmtree(output_path)
-    os.mkdir(output_path)
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
     manager = multiprocessing.Manager()
     mol_counter = multiprocessing.Value('i', 0)
     num_mols = merged_results.shape[0]
