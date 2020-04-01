@@ -40,14 +40,21 @@ def standardize_processes(sdf_file_dict, mols_per_job):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='moldbprep', description=logo, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-i', dest='input_paths', help='paths to input sdf files seperated by comma', required=True)
+    parser.add_argument('-i', dest='input_paths',
+                        help='directory containing sdf files, or paths to input sdf files seperated by comma',
+                        required=True)
     parser.add_argument('-o', dest='output_path', help='path to output folder', default='.')
     parser.add_argument('-p', dest='num_processes', help='number of parallel processes', default=1)
     parser.add_argument('-m', dest='mols_per_file', help='number of molecules per file', default=1000000)
     parser.add_argument('-s', dest='max_stereo_isomers',
                         help='maximal number of stereo isomers to generate per molecule', default=8)
     parser.add_argument('-v', dest='verbose', action='store_true', help='Show RDKit warnings')
-    input_paths = parser.parse_args().input_paths.split(',')
+    if os.path.isdir(parser.parse_args().input_paths):
+        input_directory = os.path.abspath(parser.parse_args().input_paths)
+        input_paths = [os.path.join(input_directory, path) for path in os.listdir(input_directory)
+                       if path[-4:] == '.sdf']
+    else:
+        input_paths = [os.path.abspath(path) for path in parser.parse_args().input_paths.split(',')]
     output_path = parser.parse_args().output_path
     num_processes = int(parser.parse_args().num_processes)
     mols_per_file = int(parser.parse_args().mols_per_file)
