@@ -55,7 +55,7 @@ if __name__ == "__main__":
                        if path[-4:] == '.sdf']
     else:
         input_paths = [os.path.abspath(path) for path in parser.parse_args().input_paths.split(',')]
-    output_path = parser.parse_args().output_path
+    output_path = os.path.abspath(parser.parse_args().output_path)
     num_processes = int(parser.parse_args().num_processes)
     mols_per_file = int(parser.parse_args().mols_per_file)
     max_stereo_isomers = int(parser.parse_args().max_stereo_isomers)
