@@ -24,8 +24,9 @@ def count_sdf_mols(file_path):
         Number of molecules.
 
     """
+    print('Counting molecules in {}...'.format(file_path))
     counter = 0
-    with open(file_path, 'r') as sdf_file:
+    with open(file_path, 'r', errors='backslashreplace') as sdf_file:
         for line in sdf_file:
             if '$$$$' in line:
                 counter += 1
