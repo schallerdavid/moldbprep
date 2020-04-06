@@ -48,7 +48,8 @@ if __name__ == "__main__":
     parser.add_argument('-m', dest='mols_per_file', help='number of molecules per file', default=1000000)
     parser.add_argument('-s', dest='max_stereo_isomers',
                         help='maximal number of stereo isomers to generate per molecule', default=8)
-    parser.add_argument('-v', dest='verbose', action='store_true', help='Show RDKit warnings')
+    parser.add_argument('-t', dest='tautomer', action='store_true', help='standardize tautomers')
+    parser.add_argument('-v', dest='verbose', action='store_true', help='show RDKit warnings')
     if os.path.isdir(parser.parse_args().input_paths):
         input_directory = os.path.abspath(parser.parse_args().input_paths)
         input_paths = [os.path.join(input_directory, path) for path in os.listdir(input_directory)
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     num_processes = int(parser.parse_args().num_processes)
     mols_per_file = int(parser.parse_args().mols_per_file)
     max_stereo_isomers = int(parser.parse_args().max_stereo_isomers)
+    tautomer = parser.parse_args().tautomer
     verbose = parser.parse_args().verbose
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     mol_counter = multiprocessing.Value('i', 0)
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
                                                                         start_time, vendors, max_stereo_isomers,
-                                                                        failures, verbose))
+                                                                        failures, tautomer, verbose))
                  for process_id in range(num_processes)]
     for process in processes:
         process.start()

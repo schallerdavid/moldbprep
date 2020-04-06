@@ -72,7 +72,7 @@ def enumerate_stereo_isomers(mol, max_stereo_isomers):
 
 
 def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, max_stereo_isomers, failures,
-                     verbose=False):
+                     tautomer, verbose):
     """
     This function passes molecules to the standardization functions.
 
@@ -130,7 +130,8 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                     # choose largest fragment
                     mol = LargestFragmentChooser().choose(mol)
                     # canonicalize tautomer
-                    mol = TautomerCanonicalizer().canonicalize(mol)
+                    if tautomer:
+                        mol = TautomerCanonicalizer().canonicalize(mol)
                     # protonate mol
                     mol = protonate_mol(mol)
                     # enumerate stereo isomers and append mols
