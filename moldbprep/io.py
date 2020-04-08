@@ -2,10 +2,14 @@ import multiprocessing
 import os
 import pandas as pd
 from rdkit import Chem
+from rdkit.Chem import AllChem
 from rdkit import RDLogger
 from rdkit.Chem.Descriptors import ExactMolWt
+<<<<<<< HEAD
 import re
 import shutil
+=======
+>>>>>>> a60f40017ac2d9e7cf702eba5d9637ffece7d345
 import sys
 import time
 
@@ -190,6 +194,7 @@ def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, 
         try:
             mol = Chem.MolFromSmiles(row['smiles'])
             mol = Chem.AddHs(mol)
+            AllChem.EmbedMolecule(mol)
             mol.SetProp('_Name', row['smiles'])
             properties = {vendor: row[vendor] for vendor in vendors}
             molecular_weight = ExactMolWt(mol)
