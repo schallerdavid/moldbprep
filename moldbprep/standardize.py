@@ -66,7 +66,7 @@ def enumerate_stereo_isomers(mol, max_stereo_isomers):
         A tuple of enumerated RDKit molecules.
 
     """
-    options = StereoEnumerationOptions(tryEmbedding=False, unique=True, maxIsomers=max_stereo_isomers)
+    options = StereoEnumerationOptions(tryEmbedding=True, unique=True, maxIsomers=max_stereo_isomers)
     isomers = tuple(EnumerateStereoisomers(mol, options=options))
     return isomers
 
