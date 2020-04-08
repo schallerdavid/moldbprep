@@ -4,6 +4,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit import RDLogger
 from rdkit.Chem.Descriptors import ExactMolWt
+import re
 import shutil
 import sys
 import time
@@ -51,10 +52,8 @@ def sdf_properties(file_path):
     properties = []
     with open(file_path, 'r') as sdf_file:
         for line in sdf_file:
-            if '>  <' in line:
-                properties.append(line.strip()[4:-1])
-            elif '> <' in line:
-                properties.append(line.strip()[3:-1])
+            if '>  <' in line or '> <' in line:
+                properties.append(re.search('<.*>|$', line).group()[1:-1])
             elif '$$$$' in line:
                 break
     return properties
