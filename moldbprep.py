@@ -92,5 +92,5 @@ if __name__ == "__main__":
     if len(failures) > 0:
         with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
             file.write('\n'.join(failures))
-    write_statistics(results, vendors, output_path, len(failures))
+    write_statistics(num_mols, results, vendors, output_path, len(failures))
     print('Finished after {}.'.format(time_to_text(time.time() - start_time)))

@@ -321,12 +321,14 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num
     return
 
 
-def write_statistics(merged_results, vendors, output_path, failure_count):
+def write_statistics(num_mols, merged_results, vendors, output_path, failure_count):
     """
     Write statistics about merged databases.
 
     Parameters
     ----------
+    num_mols : int
+        Number of input molecules.
     merged_results : pandas.DataFrame
         Dataframe containing the merged results.
 
@@ -342,6 +344,7 @@ def write_statistics(merged_results, vendors, output_path, failure_count):
     """
     vendor_matches = {vendor: merged_results[vendor] != '' for vendor in vendors}
     with open(os.path.join(output_path, 'database.statistics'), 'w') as file:
+        file.write('Input: {} molecules\n\n'.format(num_mols))
         file.write('Vendor\tTotal\tUnique\n')
         for vendor in vendors:
             total = vendor_matches[vendor].sum()
