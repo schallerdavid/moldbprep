@@ -5,6 +5,7 @@ from molvs.tautomer import TautomerCanonicalizer
 from rdkit import Chem
 from rdkit import RDLogger
 from rdkit.Chem.AllChem import ReactionFromSmarts
+from rdkit.Chem.Descriptors import ExactMolWt
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 import time
 
@@ -134,11 +135,13 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                         mol = TautomerCanonicalizer().canonicalize(mol)
                     # protonate mol
                     mol = protonate_mol(mol)
-                    # enumerate stereo isomers and append mols
-                    for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
-                        mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
-                        mol_as_list[1 + vendor_position] = identifier
-                        processed_mols.append(mol_as_list)
+                    # molecular weight will not change anymore
+                    if ExactMolWt(mol) < 1200:
+                        # enumerate stereo isomers and append mols
+                        for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
+                            mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
+                            mol_as_list[1 + vendor_position] = identifier
+                            processed_mols.append(mol_as_list)
                 except:
                     failures.append(' '.join(['standardize_error', smiles, job['vendor'], identifier]))
                 with mol_counter.get_lock():
