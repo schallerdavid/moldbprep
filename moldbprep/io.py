@@ -182,15 +182,17 @@ def sdf_text(mol, properties):
 
 def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, fragment_counter, drug_like_counter,
                     big_counter, parent_fragment_collector, parent_drug_like_collector, parent_big_collector,
-                    failures, verbose):
+                    failures, addhs, embed, verbose):
     if not verbose:
         RDLogger.DisableLog('rdApp.*')
     fragment_collector, drug_like_collector, big_collector = [], [], []
     for index, row in merged_results.iterrows():
         try:
             mol = Chem.MolFromSmiles(row['smiles'])
-            mol = Chem.AddHs(mol)
-            AllChem.EmbedMolecule(mol)
+            if addhs:
+                mol = Chem.AddHs(mol)
+            if embed:
+                AllChem.EmbedMolecule(mol)
             mol.SetProp('_Name', row['smiles'])
             properties = {vendor: row[vendor] for vendor in vendors}
             molecular_weight = ExactMolWt(mol)
@@ -220,7 +222,7 @@ def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, 
     return
 
 
-def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num_processes, verbose):
+def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num_processes, addhs, embed, verbose):
     """
     This function writes molecules to sd-files with vendor IDs as properties.
 
@@ -273,7 +275,7 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num
                                              args=(merged_results[jobs[job_id][0]: jobs[job_id][1]], vendors, num_mols,
                                                    start_time, mol_counter, fragment_counter, drug_like_counter,
                                                    big_counter, fragment_collector, drug_like_collector, big_collector,
-                                                   failures, verbose))
+                                                   failures, addhs, embed, verbose))
                      for job_id in range(job_start, job_end)]
         for process in processes:
             process.start()

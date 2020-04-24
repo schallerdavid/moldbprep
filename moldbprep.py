@@ -50,6 +50,8 @@ if __name__ == "__main__":
                         help='maximal number of stereo isomers to generate per molecule, default=0 --> no enumeration',
                         default=0)
     parser.add_argument('-t', dest='tautomer', action='store_true', help='standardize tautomers')
+    parser.add_argument('-e', dest='embed', action='store_true', help='generate 3D conformation')
+    parser.add_argument('-a', dest='addhs', action='store_true', help='add hydrogens')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show RDKit warnings')
     if os.path.isdir(parser.parse_args().input_paths):
         input_directory = os.path.abspath(parser.parse_args().input_paths)
@@ -62,6 +64,8 @@ if __name__ == "__main__":
     mols_per_file = int(parser.parse_args().mols_per_file)
     max_stereo_isomers = int(parser.parse_args().max_stereo_isomers)
     tautomer = parser.parse_args().tautomer
+    embed = parser.parse_args().embed
+    addhs = parser.parse_args().addhs
     verbose = parser.parse_args().verbose
     print(logo)
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
@@ -88,7 +92,7 @@ if __name__ == "__main__":
     results = pd.DataFrame(list(results), columns=['smiles'] + vendors)
     results = merge_ids(results, vendors)
     print('Writing {} molecules...'.format(results.shape[0]))
-    write_sdf(results, mols_per_file, output_path, vendors, failures, num_processes, verbose)
+    write_sdf(results, mols_per_file, output_path, vendors, failures, num_processes, addhs, embed, verbose)
     failures = list(failures)
     if len(failures) > 0:
         with open(os.path.join(output_path, 'moldbprep.failures'), 'w') as file:
