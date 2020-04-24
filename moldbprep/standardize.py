@@ -138,7 +138,12 @@ def standardize_mols(jobs, mol_counter, num_mols, results, start_time, vendors, 
                     # molecular weight will not change anymore
                     if ExactMolWt(mol) < 1200:
                         # enumerate stereo isomers and append mols
-                        for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
+                        if max_stereo_isomers > 0:
+                            for mol in enumerate_stereo_isomers(mol, max_stereo_isomers):
+                                mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
+                                mol_as_list[1 + vendor_position] = identifier
+                                processed_mols.append(mol_as_list)
+                        else:
                             mol_as_list = [Chem.MolToSmiles(mol)] + [''] * len(vendors)
                             mol_as_list[1 + vendor_position] = identifier
                             processed_mols.append(mol_as_list)

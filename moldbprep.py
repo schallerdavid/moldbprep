@@ -47,7 +47,8 @@ if __name__ == "__main__":
     parser.add_argument('-p', dest='num_processes', help='number of parallel processes', default=1)
     parser.add_argument('-m', dest='mols_per_file', help='number of molecules per file', default=1000000)
     parser.add_argument('-s', dest='max_stereo_isomers',
-                        help='maximal number of stereo isomers to generate per molecule', default=8)
+                        help='maximal number of stereo isomers to generate per molecule, default=0 --> no enumeration',
+                        default=0)
     parser.add_argument('-t', dest='tautomer', action='store_true', help='standardize tautomers')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show RDKit warnings')
     if os.path.isdir(parser.parse_args().input_paths):
