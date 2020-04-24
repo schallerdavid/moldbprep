@@ -193,8 +193,12 @@ def sdf_text_worker(merged_results, vendors, num_mols, start_time, mol_counter, 
                 mol = Chem.AddHs(mol)
             if embed:
                 AllChem.EmbedMolecule(mol)
-            mol.SetProp('_Name', row['smiles'])
             properties = {vendor: row[vendor] for vendor in vendors}
+            mol_name = ','.join([identifier for identifier in properties.values() if len(identifier)> 0])
+            if len(mol_name) > 20:
+                mol_name = mol_name[:17] + '...'
+            mol.SetProp('_Name', mol_name)
+            properties['smiles'] = row['smiles']
             molecular_weight = ExactMolWt(mol)
         except:
             failures.append(' '.join(['write_error', row['smiles']]))
