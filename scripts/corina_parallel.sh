@@ -14,6 +14,6 @@ get_abs_filename() {
 
 for path in $directory_path/*; do
   if [[ $path == *".sdf" ]]; then
-    sbatch -p$queue -n 1 $(dirname $PWD/$0)/corina_slurm_job.sh $(get_abs_filename $path) $msi $msc
+    sbatch -p$queue -n 1 $(dirname $(get_abs_filename $0))/corina_slurm_job.sh $(get_abs_filename $path) $msi $msc
   fi
 done
