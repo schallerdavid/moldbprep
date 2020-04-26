@@ -15,6 +15,6 @@ get_abs_filename() {
 
 for path in $directory_path/*; do
   if [[ $path == *$pattern* ]]; then
-    sbatch -p$queue -n $num_cpus $(dirname $(get_abs_filename $0))/idbgen_slurm_job.sh $(get_abs_filename $path) $num_cpus $type
+    sbatch -p$queue -c $num_cpus $(dirname $(get_abs_filename $0))/idbgen_slurm_job.sh $(get_abs_filename $path) $num_cpus $type
   fi
 done
