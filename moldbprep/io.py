@@ -176,7 +176,7 @@ def sdf_text(mol, properties):
     """
     sdf_text = Chem.MolToMolBlock(mol)
     sdf_text += '\n'.join(['>  <{}>\n{}\n'.format(key, value) for key, value in properties.items()])
-    sdf_text += '\n$$$$'
+    sdf_text += '\n$$$$\n'
     return sdf_text
 
 
@@ -286,41 +286,41 @@ def write_sdf(merged_results, mols_per_file, output_path, vendors, failures, num
         for process in processes:
             process.join()
         if fragment_counter.value > mols_per_file:
-            fragment.write('\n'.join(fragment_collector[0:mols_per_file - fragment_counter.value]))
+            fragment.write(''.join(fragment_collector[0:mols_per_file - fragment_counter.value]))
             fragment_collector = manager.list(fragment_collector[mols_per_file - fragment_counter.value:])
             fragment_counter.value = len(fragment_collector)
             fragment.close()
             fragment_file_counter += 1
             fragment = open(os.path.join(output_path, 'fragment_{}.sdf'.format(fragment_file_counter)), 'w')
         if len(fragment_collector) >= mols_in_memory:
-            fragment.write('\n'.join(fragment_collector))
+            fragment.write(''.join(fragment_collector))
             fragment_collector = manager.list()
         if drug_like_counter.value > mols_per_file:
-            drug_like.write('\n'.join(drug_like_collector[0:mols_per_file - drug_like_counter.value]))
+            drug_like.write(''.join(drug_like_collector[0:mols_per_file - drug_like_counter.value]))
             drug_like_collector = manager.list(drug_like_collector[mols_per_file - drug_like_counter.value:])
             drug_like_counter.value = len(drug_like_collector)
             drug_like.close()
             drug_like_file_counter += 1
             drug_like = open(os.path.join(output_path, 'drug-like_{}.sdf'.format(drug_like_file_counter)), 'w')
         if len(drug_like_collector) >= mols_in_memory:
-            drug_like.write('\n'.join(drug_like_collector))
+            drug_like.write(''.join(drug_like_collector))
             drug_like_collector = manager.list()
         if big_counter.value > mols_per_file:
-            big.write('\n'.join(big_collector[0:mols_per_file - big_counter.value]))
+            big.write(''.join(big_collector[0:mols_per_file - big_counter.value]))
             big_collector = manager.list(big_collector[mols_per_file - big_counter.value:])
             big_counter.value = len(big_collector)
             big.close()
             big_file_counter += 1
             big = open(os.path.join(output_path, 'big_{}.sdf'.format(big_file_counter)), 'w')
         if len(big_collector) >= mols_in_memory:
-            big.write('\n'.join(big_collector))
+            big.write(''.join(big_collector))
             big_collector = manager.list()
     if len(fragment_collector) > 0:
-        fragment.write('\n'.join(fragment_collector))
+        fragment.write(''.join(fragment_collector))
     if len(drug_like_collector) > 0:
-        drug_like.write('\n'.join(drug_like_collector))
+        drug_like.write(''.join(drug_like_collector))
     if len(big_collector) > 0:
-        big.write('\n'.join(big_collector))
+        big.write(''.join(big_collector))
     fragment.close()
     drug_like.close()
     big.close()
