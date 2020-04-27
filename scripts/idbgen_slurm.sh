@@ -4,7 +4,7 @@ directory_path="$1"
 pattern="$2"
 type="$3"
 queue="cn-cpu"
-num_cpus="5"
+num_cpus="6"
 
 get_abs_filename() {
   # $1 : relative filename
