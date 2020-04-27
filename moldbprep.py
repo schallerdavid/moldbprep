@@ -5,6 +5,7 @@ Prepare, standardize and merge molecule databases for virtual screening.
 Handles the primary functions
 """
 import argparse
+import math
 from moldbprep.io import count_sdf_mols, database_prompt, write_sdf, write_statistics, time_to_text
 from moldbprep.standardize import standardize_mols, merge_ids
 import multiprocessing
@@ -71,13 +72,14 @@ if __name__ == "__main__":
     sdf_file_dict = {file_path: [count_sdf_mols(file_path), *database_prompt(file_path)] for file_path in input_paths}
     vendors = list(set([value[1] for value in sdf_file_dict.values()]))
     num_mols = sum([value[0] for value in sdf_file_dict.values()])
-    print('Standardizing {} molecules from {} databases...'.format(num_mols, len(vendors)))
+    max_mols_per_db = max([value[0] for value in sdf_file_dict.values()])
+    print('Standardizing {} molecules from {} vendors...'.format(num_mols, len(vendors)))
     start_time = time.time()
     manager = multiprocessing.Manager()
     results = manager.list()
     failures = manager.list()
     jobs = manager.list()
-    for job in standardize_processes(sdf_file_dict, 500):
+    for job in standardize_processes(sdf_file_dict, math.ceil(max_mols_per_db / num_processes)):
         jobs.append(job)
     mol_counter = multiprocessing.Value('i', 0)
     processes = [multiprocessing.Process(target=standardize_mols, args=(jobs, mol_counter, num_mols, results,
